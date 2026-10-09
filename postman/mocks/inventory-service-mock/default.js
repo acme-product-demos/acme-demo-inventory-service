@@ -17,7 +17,7 @@ const server = http.createServer((req, res) => {
   // @endpoint GET /api/inventory
   if (req.method === 'GET' && pathname === '/api/inventory') {
     res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify([{"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":48,"warehouse":"US-EAST-1"},{"productId":"p2","sku":"SKU-P2-SMARTWCH","quantityAvailable":2,"warehouse":"US-WEST-1"}]));
+    return res.end(JSON.stringify([{"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":48,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"},{"productId":"p2","sku":"SKU-P2-SMARTWCH","quantityAvailable":2,"warehouse":"US-WEST-1","lastRestockedAt":"2026-09-15T08:00:00.000Z"}]));
   }
 
   // @endpoint GET /api/inventory/:productId
@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
 
     // "The inventory record for the given product." — default
     res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":48,"warehouse":"US-EAST-1"}));
+    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":48,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
   }
 
   // @endpoint PUT /api/inventory/:productId
@@ -47,7 +47,7 @@ const server = http.createServer((req, res) => {
 
     // "The updated inventory record." — default
     res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":25,"warehouse":"US-EAST-1"}));
+    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":25,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
   }
 
   // @endpoint POST /api/inventory/:productId/reserve
@@ -68,7 +68,7 @@ const server = http.createServer((req, res) => {
 
     // "The updated inventory record after the reservation." — default
     res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":47,"warehouse":"US-EAST-1"}));
+    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":47,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
   }
 
   res.writeHead(404, { 'Content-Type': 'application/json' });
