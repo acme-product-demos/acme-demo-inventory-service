@@ -15,13 +15,13 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'inventory-service' });
 });
 
-// In-memory inventory storage: productId -> { productId, sku, quantityAvailable, warehouse }
+// In-memory inventory storage: productId -> { productId, sku, quantityAvailable, warehouse, lastRestockedAt }
 const inventory = new Map([
-  ['p1', { productId: 'p1', sku: 'SKU-P1-HEADPHN', quantityAvailable: 48, warehouse: 'US-EAST-1' }],
-  ['p2', { productId: 'p2', sku: 'SKU-P2-SMARTWCH', quantityAvailable: 2, warehouse: 'US-WEST-1' }],
-  ['p3', { productId: 'p3', sku: 'SKU-P3-POURCOFF', quantityAvailable: 120, warehouse: 'US-EAST-1' }],
-  ['p4', { productId: 'p4', sku: 'SKU-P4-THROWPLW', quantityAvailable: 75, warehouse: 'US-WEST-1' }],
-  ['p5', { productId: 'p5', sku: 'SKU-P5-DESKLAMP', quantityAvailable: 30, warehouse: 'US-EAST-1' }],
+  ['p1', { productId: 'p1', sku: 'SKU-P1-HEADPHN', quantityAvailable: 48, warehouse: 'US-EAST-1', lastRestockedAt: '2026-09-30T08:00:00.000Z' }],
+  ['p2', { productId: 'p2', sku: 'SKU-P2-SMARTWCH', quantityAvailable: 2, warehouse: 'US-WEST-1', lastRestockedAt: '2026-09-15T08:00:00.000Z' }],
+  ['p3', { productId: 'p3', sku: 'SKU-P3-POURCOFF', quantityAvailable: 120, warehouse: 'US-EAST-1', lastRestockedAt: '2026-09-28T08:00:00.000Z' }],
+  ['p4', { productId: 'p4', sku: 'SKU-P4-THROWPLW', quantityAvailable: 75, warehouse: 'US-WEST-1', lastRestockedAt: '2026-09-20T08:00:00.000Z' }],
+  ['p5', { productId: 'p5', sku: 'SKU-P5-DESKLAMP', quantityAvailable: 30, warehouse: 'US-EAST-1', lastRestockedAt: '2026-09-25T08:00:00.000Z' }],
 ]);
 
 const router = express.Router();
@@ -51,8 +51,14 @@ router.put('/:productId', (req, res) => {
 
   const existing = inventory.get(productId);
   const record = existing
-    ? { ...existing, quantityAvailable }
-    : { productId, sku: `SKU-${productId.toUpperCase()}`, quantityAvailable, warehouse: 'US-EAST-1' };
+    ? { ...existing, quantityAvailable, lastRestockedAt: new Date().toISOString() }
+    : {
+        productId,
+        sku: `SKU-${productId.toUpperCase()}`,
+        quantityAvailable,
+        warehouse: 'US-EAST-1',
+        lastRestockedAt: new Date().toISOString(),
+      };
   inventory.set(productId, record);
 
   res.status(200).json(record);

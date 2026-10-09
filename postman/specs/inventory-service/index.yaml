@@ -224,6 +224,10 @@ components:
         warehouse:
           type: string
           example: US-EAST-1
+        lastRestockedAt:
+          type: string
+          format: date-time
+          example: '2026-09-30T08:00:00.000Z'
     Error:
       type: object
       properties:
