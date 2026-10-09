@@ -1,0 +1,44 @@
+name: Postman CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  postman-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install service dependencies
+        run: npm ci
+      - name: Install Postman CLI
+        run: npm install -g postman-cli
+      - name: Authenticate Postman CLI
+        run: postman login --with-api-key "${{ secrets.POSTMAN_API_KEY }}"
+      - name: Start service in background
+        run: nohup npm start > server.log 2>&1 &
+      - name: Wait for service to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:4004/health && exit 0
+            sleep 1
+          done
+          echo "Service never became healthy"; cat server.log; exit 1
+      - name: Spec lint (governance)
+        run: postman spec lint postman/specs/inventory-service/index.yaml --workspace-id aac0cb0f-957f-4f53-8232-15c04059f631 -f error
+      - name: Collection lint (structure/style)
+        run: postman collection lint "postman/collections/Inventory Service API" -f error
+      - name: Collection run (live contract test)
+        run: postman collection run "postman/collections/Inventory Service API" -e postman/environments/inventory-service-local.environment.yaml
+      - name: AI readiness gate (spec)
+        run: postman spec ai-readiness postman/specs/inventory-service/index.yaml --min-score 70
+      - name: AI readiness gate (collection)
+        run: postman collection ai-readiness "postman/collections/Inventory Service API" --min-score 70
+      - name: Push to Postman workspace (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: postman workspace push -y

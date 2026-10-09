@@ -1,0 +1,121 @@
+name: Sync Mock From Spec
+
+# Keeps the mock a disposable build output of the spec: the spec is the
+# source of truth, this job regenerates the mock from it on every change
+# and commits the result, so it's reviewable/diffable like code and never
+# hand-edited. See the "Keeping mocks in sync with API changes" doc.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'postman/specs/inventory-service/index.yaml'
+      # Editing this workflow re-runs it, so changes to it are self-testing.
+      - '.github/workflows/mock-sync.yml'
+  # Manual runs ignore the paths filter and always regenerate.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  SPEC_PATH: postman/specs/inventory-service/index.yaml
+  MOCK_PATH: postman/mocks/inventory-service-mock
+  MOCK_WORKSPACE_ID: aac0cb0f-957f-4f53-8232-15c04059f631
+
+jobs:
+  sync-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # needed to push the regenerated mock back
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Postman CLI
+        run: npm install -g postman-cli
+
+      - name: Authenticate Postman CLI
+        run: postman login --with-api-key "${{ secrets.POSTMAN_API_KEY }}"
+
+      # Fails on spec errors only; warnings do not block.
+      - name: Lint spec
+        run: postman spec lint "$SPEC_PATH" -f error
+
+      # --update preserves the mock's existing id, slug and port.
+      - name: Regenerate mock from spec
+        run: postman mock generate "$SPEC_PATH" --update "$MOCK_PATH"
+
+      - name: Smoke-check generated handler
+        run: |
+          set -euo pipefail
+          for handler in "$MOCK_PATH"/*.js; do
+            echo "checking $handler"
+            node --check "$handler"
+          done
+
+      - name: Detect whether the mock changed
+        id: diff
+        run: |
+          set -euo pipefail
+          git add --intent-to-add "$MOCK_PATH"
+          if git diff --quiet -- "$MOCK_PATH"; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git --no-pager diff --stat -- "$MOCK_PATH"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Commit before the cloud push, same as the reference workflow: a git
+      # push can be retried safely if it fails.
+      # [skip ci] stops this commit retriggering this workflow or postman-ci.yml.
+      - name: Commit and push regenerated mock
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "$MOCK_PATH"
+          git commit -m "chore(mock): regenerate mock from spec [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:"$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            git pull --rebase origin "$GITHUB_REF_NAME"
+          done
+          echo "could not push after 3 attempts" >&2
+          exit 1
+
+      # mock push live-updates the already-deployed server by its recorded id.
+      - name: Push mock to the workspace
+        if: steps.diff.outputs.changed == 'true'
+        run: postman mock push "$MOCK_PATH" -w "$MOCK_WORKSPACE_ID"
+
+      # The cloud id is already recorded from the first manual push; this
+      # only commits something if a future `mock generate` ever changes it.
+      - name: Record the mock id
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- .postman/resources.yaml "$MOCK_PATH"; then
+            echo "No id change to record."
+            exit 0
+          fi
+          git add .postman/resources.yaml "$MOCK_PATH"
+          git commit -m "chore(mock): record mock id [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:"$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            git pull --rebase origin "$GITHUB_REF_NAME"
+          done
+          echo "could not push the id after 3 attempts" >&2
+          exit 1
