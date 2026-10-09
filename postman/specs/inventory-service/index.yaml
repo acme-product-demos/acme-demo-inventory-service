@@ -9,6 +9,9 @@ info:
     name: acme-corp demo team
     email: avinash.choudhary@postman.com
     url: https://github.com/acme-product-demos/acme-demo-inventory-service
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 servers:
   - url: http://localhost:4004
     description: Local development server
