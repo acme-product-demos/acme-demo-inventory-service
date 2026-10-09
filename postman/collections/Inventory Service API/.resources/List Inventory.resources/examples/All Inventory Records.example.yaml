@@ -1,0 +1,19 @@
+$kind: http-example
+name: All Inventory Records
+request:
+  url: '{{baseUrl}}/api/inventory'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      [
+        { "productId": "p1", "sku": "SKU-P1-HEADPHN", "quantityAvailable": 48, "warehouse": "US-EAST-1" },
+        { "productId": "p2", "sku": "SKU-P2-SMARTWCH", "quantityAvailable": 2, "warehouse": "US-WEST-1" }
+      ]
+order: 1000

@@ -1,0 +1,20 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/inventory/unknown-id'
+order: 4000
+headers:
+  - key: Accept
+    value: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 404', function () {
+        pm.response.to.have.status(404);
+      });
+
+      pm.test('body reports the not-found error message', function () {
+        var body = pm.response.json();
+        pm.expect(body.error).to.eql('Inventory record not found');
+      });
+examples: './.resources/Get Inventory Not Found.resources/examples/'

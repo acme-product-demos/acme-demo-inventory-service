@@ -1,0 +1,21 @@
+$kind: http-request
+method: GET
+url: '{{baseUrl}}/api/inventory/p1'
+order: 3000
+headers:
+  - key: Accept
+    value: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test('returns the p1 inventory record', function () {
+        var body = pm.response.json();
+        pm.expect(body.productId).to.eql('p1');
+        pm.expect(body.quantityAvailable).to.be.a('number');
+      });
+examples: './.resources/Get Inventory Found.resources/examples/'

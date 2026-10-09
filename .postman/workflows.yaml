@@ -1,0 +1,4 @@
+workflows:
+  syncSpecToCollection:
+    - spec: ../postman/specs/inventory-service/index.yaml
+      collection: ../postman/collections/Inventory Service API

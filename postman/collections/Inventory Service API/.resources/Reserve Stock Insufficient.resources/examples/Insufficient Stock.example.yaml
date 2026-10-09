@@ -1,0 +1,24 @@
+$kind: http-example
+name: Insufficient Stock
+request:
+  url: '{{baseUrl}}/api/inventory/p2/reserve'
+  method: POST
+  body:
+    type: json
+    content: |-
+      {
+        "quantity": 99
+      }
+response:
+  statusCode: 400
+  statusText: Bad Request
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": "Insufficient stock"
+      }
+order: 1000

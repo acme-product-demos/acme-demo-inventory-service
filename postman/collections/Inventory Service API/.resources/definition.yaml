@@ -1,0 +1,8 @@
+$kind: collection
+name: Inventory Service API
+description: >-
+  Collection of requests exercising the inventory-service stock API: health
+  check, listing inventory, fetching a single record by product id (found
+  and not-found paths), setting an exact stock level, and reserving stock
+  (success and insufficient-stock paths).
+variables: []

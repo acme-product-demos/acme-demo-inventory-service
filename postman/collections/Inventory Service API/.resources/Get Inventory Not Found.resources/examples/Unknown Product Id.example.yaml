@@ -1,0 +1,18 @@
+$kind: http-example
+name: Unknown Product Id
+request:
+  url: '{{baseUrl}}/api/inventory/unknown-id'
+  method: GET
+response:
+  statusCode: 404
+  statusText: Not Found
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "error": "Inventory record not found"
+      }
+order: 1000

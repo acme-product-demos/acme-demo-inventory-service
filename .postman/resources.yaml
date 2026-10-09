@@ -1,0 +1,14 @@
+cloudResources:
+  collections:
+    ../postman/collections/Inventory Service API: 49130935-e2945dea-1c0f-49de-9ff0-35d2933d5d4e
+  environments:
+    ../postman/environments/inventory-service-local.environment.yaml: 49130935-2954f0d5-e9f8-4d65-9e27-1eafe581a8b2
+  mocks:
+    ../postman/mocks/inventory-service-mock/config.yaml: 92232347-ca7a-4985-a1d6-de4f58f545c1
+  specs:
+    ../postman/specs/inventory-service/index.yaml: e7677a8d-3da3-4195-8cca-1afdbc5377ad
+resourceNameMappings:
+  specs:
+    - ../postman/specs/inventory-service/index.yaml: Inventory Service API
+workspace:
+  id: aac0cb0f-957f-4f53-8232-15c04059f631

@@ -1,0 +1,19 @@
+$kind: http-example
+name: Service Healthy
+request:
+  url: '{{baseUrl}}/health'
+  method: GET
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    - key: Content-Type
+      value: application/json
+  body:
+    type: json
+    content: |-
+      {
+        "status": "ok",
+        "service": "inventory-service"
+      }
+order: 1000

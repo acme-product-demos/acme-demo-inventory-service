@@ -1,0 +1,31 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/inventory/p2/reserve'
+order: 7000
+description: >-
+  p2 is seeded with only 2 units available; requesting 99 should be
+  rejected as insufficient stock rather than going negative.
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "quantity": 99
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 400', function () {
+        pm.response.to.have.status(400);
+      });
+
+      pm.test('body reports insufficient stock', function () {
+        var body = pm.response.json();
+        pm.expect(body.error).to.eql('Insufficient stock');
+      });
+examples: './.resources/Reserve Stock Insufficient.resources/examples/'

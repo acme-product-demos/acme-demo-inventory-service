@@ -1,0 +1,6 @@
+name: Inventory Service Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:4004'
+    enabled: true
+    type: default

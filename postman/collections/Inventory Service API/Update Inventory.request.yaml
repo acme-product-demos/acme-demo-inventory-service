@@ -1,0 +1,29 @@
+$kind: http-request
+method: PUT
+url: '{{baseUrl}}/api/inventory/p1'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "quantityAvailable": 25
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test('quantityAvailable was set to the exact value sent', function () {
+        var body = pm.response.json();
+        pm.expect(body.productId).to.eql('p1');
+        pm.expect(body.quantityAvailable).to.eql(25);
+      });
+examples: './.resources/Update Inventory.resources/examples/'

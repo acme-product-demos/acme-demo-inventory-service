@@ -1,0 +1,32 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/inventory/p1/reserve'
+order: 6000
+description: >-
+  Runs after "Update Inventory" sets p1's quantityAvailable to 25, so
+  reserving 1 here should leave 24.
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "quantity": 1
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 200', function () {
+        pm.response.to.have.status(200);
+      });
+
+      pm.test('quantityAvailable decremented by the reserved amount', function () {
+        var body = pm.response.json();
+        pm.expect(body.productId).to.eql('p1');
+        pm.expect(body.quantityAvailable).to.eql(24);
+      });
+examples: './.resources/Reserve Stock Success.resources/examples/'

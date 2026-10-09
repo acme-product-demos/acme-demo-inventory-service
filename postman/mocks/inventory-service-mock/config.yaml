@@ -1,0 +1,11 @@
+version: 1
+id: 92232347-ca7a-4985-a1d6-de4f58f545c1
+name: Inventory Service Mock
+slug: inventory-service-mock
+protocol: http
+port: 5004
+scenarios:
+  - name: default
+    path: ./default.js
+    default: true
+    id: 01a12040-25f8-7582-a80b-02b517e911ab

@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service API
+  version: 0.1.0
+  description: >-
+    Stock-level service for the product catalog. Backed by in-memory data
+    with 5 seeded inventory records (productIds p1..p5).
+  contact:
+    name: acme-corp demo team
+    email: avinash.choudhary@postman.com
+    url: https://github.com/acme-product-demos/acme-demo-inventory-service
+servers:
+  - url: http://localhost:4004
+    description: Local development server
+tags:
+  - name: Health
+    description: Service health checks
+  - name: Inventory
+    description: Stock-level operations
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the service's health status.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+              example:
+                status: ok
+                service: inventory-service
+  /api/inventory:
+    get:
+      tags:
+        - Inventory
+      summary: List inventory records
+      description: Returns the stock-level record for every known product.
+      operationId: listInventory
+      responses:
+        '200':
+          description: Array of inventory records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryRecord'
+              example:
+                - productId: p1
+                  sku: SKU-P1-HEADPHN
+                  quantityAvailable: 48
+                  warehouse: US-EAST-1
+                - productId: p2
+                  sku: SKU-P2-SMARTWCH
+                  quantityAvailable: 2
+                  warehouse: US-WEST-1
+  /api/inventory/{productId}:
+    get:
+      tags:
+        - Inventory
+      summary: Get an inventory record
+      description: Returns the stock-level record for a single product.
+      operationId: getInventoryRecord
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: The inventory record for the given product.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecord'
+              example:
+                productId: p1
+                sku: SKU-P1-HEADPHN
+                quantityAvailable: 48
+                warehouse: US-EAST-1
+        '404':
+          description: No inventory record exists for this productId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Inventory record not found
+    put:
+      tags:
+        - Inventory
+      summary: Set exact stock level
+      description: >-
+        Upserts the exact quantityAvailable for a product. Creates a new
+        record with a placeholder sku/warehouse if the product has no
+        existing record.
+      operationId: setInventoryQuantity
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantityAvailable
+              properties:
+                quantityAvailable:
+                  type: integer
+                  minimum: 0
+                  example: 25
+      responses:
+        '200':
+          description: The updated inventory record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecord'
+              example:
+                productId: p1
+                sku: SKU-P1-HEADPHN
+                quantityAvailable: 25
+                warehouse: US-EAST-1
+        '400':
+          description: quantityAvailable is missing or not a number >= 0.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: quantityAvailable must be a number >= 0
+  /api/inventory/{productId}/reserve:
+    post:
+      tags:
+        - Inventory
+      summary: Reserve stock
+      description: >-
+        Decrements quantityAvailable by the requested amount. Fails if the
+        product is unknown or if the requested quantity exceeds what's
+        available.
+      operationId: reserveInventory
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                  example: 1
+      responses:
+        '200':
+          description: The updated inventory record after the reservation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventoryRecord'
+              example:
+                productId: p1
+                sku: SKU-P1-HEADPHN
+                quantityAvailable: 47
+                warehouse: US-EAST-1
+        '400':
+          description: quantity is invalid, or exceeds quantityAvailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Insufficient stock
+        '404':
+          description: No inventory record exists for this productId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Inventory record not found
+components:
+  parameters:
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      description: The product's id (e.g. p1).
+      schema:
+        type: string
+      example: p1
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: inventory-service
+    InventoryRecord:
+      type: object
+      properties:
+        productId:
+          type: string
+          example: p1
+        sku:
+          type: string
+          example: SKU-P1-HEADPHN
+        quantityAvailable:
+          type: integer
+          example: 48
+        warehouse:
+          type: string
+          example: US-EAST-1
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
