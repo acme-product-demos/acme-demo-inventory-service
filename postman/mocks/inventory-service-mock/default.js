@@ -4,6 +4,26 @@
 const http = require('http');
 const PORT = process.env.PORT || 5004;
 
+function readBody(req, cb) {
+  let data = '';
+  req.on('data', (chunk) => (data += chunk));
+  req.on('end', () => {
+    try {
+      cb(data ? JSON.parse(data) : {});
+    } catch (e) {
+      cb({});
+    }
+  });
+}
+
+// Returns the body's unexpected top-level keys (those not in allowedKeys),
+// or null if there are none / the body isn't a plain object.
+function unexpectedFields(body, allowedKeys) {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
+  const extra = Object.keys(body).filter((key) => !allowedKeys.includes(key));
+  return extra.length > 0 ? extra : null;
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '', 'http://localhost');
   const pathname = url.pathname;
@@ -37,38 +57,60 @@ const server = http.createServer((req, res) => {
 
   // @endpoint PUT /api/inventory/:productId
   if (req.method === 'PUT' && /^\/api\/inventory\/([^/]+)$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    return readBody(req, (body) => {
+      const requestedStatusCode = req.headers['x-mock-response-code'];
 
-    // "quantityAvailable is missing or not a number >= 0." — when x-mock-response-code: 400
-    if (requestedStatusCode === '400') {
-      res.writeHead(400, {"Content-Type":"application/json"});
-      return res.end(JSON.stringify({"error":"quantityAvailable must be a number >= 0"}));
-    }
+      const extra = unexpectedFields(body, ['quantityAvailable']);
+      if (extra) {
+        res.writeHead(400, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":`Unexpected field(s) in request body: ${extra.join(', ')}`}));
+      }
 
-    // "The updated inventory record." — default
-    res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":25,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
+      // "quantityAvailable is missing or not a number >= 0." — real check, or forced via x-mock-response-code: 400
+      if (requestedStatusCode === '400' || typeof body.quantityAvailable !== 'number' || body.quantityAvailable < 0) {
+        res.writeHead(400, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":"quantityAvailable must be a number >= 0"}));
+      }
+
+      // "The updated inventory record." — default
+      res.writeHead(200, {"Content-Type":"application/json"});
+      return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":25,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
+    });
   }
 
   // @endpoint POST /api/inventory/:productId/reserve
   if (req.method === 'POST' && /^\/api\/inventory\/([^/]+)\/reserve$/.test(pathname)) {
-    const requestedStatusCode = req.headers['x-mock-response-code'];
+    return readBody(req, (body) => {
+      const requestedStatusCode = req.headers['x-mock-response-code'];
 
-    // "quantity is invalid, or exceeds quantityAvailable." — when x-mock-response-code: 400
-    if (requestedStatusCode === '400') {
-      res.writeHead(400, {"Content-Type":"application/json"});
-      return res.end(JSON.stringify({"error":"Insufficient stock"}));
-    }
+      const extra = unexpectedFields(body, ['quantity']);
+      if (extra) {
+        res.writeHead(400, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":`Unexpected field(s) in request body: ${extra.join(', ')}`}));
+      }
 
-    // "No inventory record exists for this productId." — when x-mock-response-code: 404
-    if (requestedStatusCode === '404') {
-      res.writeHead(404, {"Content-Type":"application/json"});
-      return res.end(JSON.stringify({"error":"Inventory record not found"}));
-    }
+      // "quantity is missing or not a number >= 1." — real check
+      if (typeof body.quantity !== 'number' || body.quantity < 1) {
+        res.writeHead(400, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":"quantity must be a number > 0"}));
+      }
 
-    // "The updated inventory record after the reservation." — default
-    res.writeHead(200, {"Content-Type":"application/json"});
-    return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":47,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
+      // "quantity exceeds quantityAvailable." — forced via x-mock-response-code: 400
+      if (requestedStatusCode === '400') {
+        res.writeHead(400, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":"Insufficient stock"}));
+      }
+
+      // "No inventory record exists for this productId." — when x-mock-response-code: 404
+      if (requestedStatusCode === '404') {
+        res.writeHead(404, {"Content-Type":"application/json"});
+        return res.end(JSON.stringify({"error":"Inventory record not found"}));
+      }
+
+      // "The updated inventory record after the reservation." — default
+      res.writeHead(200, {"Content-Type":"application/json"});
+      return res.end(JSON.stringify({"productId":"p1","sku":"SKU-P1-HEADPHN","quantityAvailable":47,"warehouse":"US-EAST-1","lastRestockedAt":"2026-09-30T08:00:00.000Z"}));
+    });
   }
 
   res.writeHead(404, { 'Content-Type': 'application/json' });
