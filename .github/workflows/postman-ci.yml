@@ -34,7 +34,11 @@ jobs:
       - name: Collection lint (structure/style)
         run: postman collection lint "postman/collections/Inventory Service API" -f error
       - name: Collection run (live contract test)
-        run: postman collection run "postman/collections/Inventory Service API" -e postman/environments/inventory-service-local.environment.yaml
+        # Scoped to the pre-existing requests: the two "Rejects Unexpected
+        # Field" negative tests exercise validation that only the mock has
+        # (see the step below) -- the real service was intentionally left
+        # unchanged.
+        run: postman collection run "postman/collections/Inventory Service API" -e postman/environments/inventory-service-local.environment.yaml -i "Health Check" -i "List Inventory" -i "Get Inventory Found" -i "Get Inventory Not Found" -i "Update Inventory" -i "Reserve Stock Success" -i "Reserve Stock Insufficient"
       - name: Contract test against deployed mock (publisher-driven)
         # This mock is fully static/stateless (no cross-request memory at
         # all), so it doesn't hit the non-sticky-instance issue cart/order
