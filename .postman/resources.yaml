@@ -3,6 +3,7 @@ cloudResources:
     ../postman/collections/Inventory Service API: 49130935-e2945dea-1c0f-49de-9ff0-35d2933d5d4e
   environments:
     ../postman/environments/inventory-service-local.environment.yaml: 49130935-2954f0d5-e9f8-4d65-9e27-1eafe581a8b2
+    ../postman/environments/inventory-service-mock.environment.yaml: 49130935-582cd951-9e94-4a5e-9f72-fe5cc47f001c
   mocks:
     ../postman/mocks/inventory-service-mock/config.yaml: 92232347-ca7a-4985-a1d6-de4f58f545c1
   specs:
