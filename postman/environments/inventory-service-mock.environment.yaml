@@ -1,0 +1,6 @@
+name: Inventory Service Mock
+values:
+  - key: baseUrl
+    value: 'https://inventory-service-mock-b08713.mock.product-demos.postman.dev'
+    enabled: true
+    type: default

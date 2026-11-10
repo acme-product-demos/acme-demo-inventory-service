@@ -1,0 +1,31 @@
+$kind: http-request
+method: POST
+url: '{{baseUrl}}/api/inventory/p1/reserve'
+order: 7600
+description: >-
+  Self-contained negative test: a body with an unexpected field must be
+  rejected with a clear error, not silently accepted.
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "quantity": 1,
+      "warehouse": "NOT-PART-OF-THE-CONTRACT"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('status is 400', function () {
+        pm.response.to.have.status(400);
+      });
+
+      pm.test('error names the unexpected field', function () {
+        var body = pm.response.json();
+        pm.expect(body.error).to.include('warehouse');
+      });

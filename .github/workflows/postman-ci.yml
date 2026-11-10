@@ -35,6 +35,13 @@ jobs:
         run: postman collection lint "postman/collections/Inventory Service API" -f error
       - name: Collection run (live contract test)
         run: postman collection run "postman/collections/Inventory Service API" -e postman/environments/inventory-service-local.environment.yaml
+      - name: Contract test against deployed mock (publisher-driven)
+        # This mock is fully static/stateless (no cross-request memory at
+        # all), so it doesn't hit the non-sticky-instance issue cart/order
+        # do -- but it's scoped the same way for consistency: health plus
+        # the self-contained negative tests that exercise the new body
+        # validation against whatever's actually deployed.
+        run: postman collection run "postman/collections/Inventory Service API" -e postman/environments/inventory-service-mock.environment.yaml -i "Health Check" -i "Update Inventory Rejects Unexpected Field" -i "Reserve Stock Rejects Unexpected Field"
       - name: AI readiness gate (spec)
         run: postman spec ai-readiness postman/specs/inventory-service/index.yaml --min-score 70
       - name: AI readiness gate (collection)
